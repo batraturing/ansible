@@ -1,0 +1,40 @@
+---
+- name: Сбор информации с клиентов
+  hosts: Clients
+  gather_facts: yes
+  tasks:
+    - name: Создание директории для сохранения информации
+      file:
+        path: /etc/ansible/IT-Planet
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      run_once: yes
+
+    - name: Сбор информации о клиентах
+      block:
+        - name: Получение IP-адреса
+          set_fact:
+            client_ip: "{{ ansible_default_ipv4.address }}"
+
+        - name: Получение версии ОС
+          set_fact:
+            os_version: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+        - name: Получение имени клиента
+          set_fact:
+            client_name: "{{ ansible_hostname }}"
+
+        - name: Получение свободного места на диске
+          set_fact:
+            free_disk_space: "{{ ansible_mounts | json_query('[?mount==`/`].size_available | [0]') | default('N/A') }}"
+
+        - name: Сохранение информации в файл
+          copy:
+            content: |
+              IP адрес: {{ client_ip }}
+              Версия ОС: {{ os_version }}
+              Имя клиента: {{ client_name }}
+              Свободное место на диске: {{ free_disk_space }}
+            dest: "/etc/ansible/IT-Planet/{{ inventory_hostname }}.txt"
+          delegate_to: localhost

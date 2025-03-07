@@ -1,0 +1,29 @@
+---
+- name: Gather system information from clients
+  hosts: clients
+  become: yes
+  tasks:
+    - name: Get IP addresses
+      shell: ip addr show | grep 'inet ' | awk '{print $2}'
+      register: ip_addresses
+
+    - name: Get OS version
+      shell: cat /etc/os-release | grep PRETTY_NAME | cut -d '=' -f 2 | tr -d '"'
+      register: os_version
+
+    - name: Get hostname
+      shell: hostname
+      register: hostname
+
+    - name: Get free disk space
+      shell: df -h | awk 'NR==2 {print $4}'
+      register: free_disk_space
+
+    - name: Save gathered information to a file
+      copy:
+        content: |
+          Hostname: {{ hostname.stdout }}
+          IP Addresses: {{ ip_addresses.stdout_lines | join(', ') }}
+          OS Version: {{ os_version.stdout }}
+          Free Disk Space: {{ free_disk_space.stdout }}
+        dest: "/etc/ansible/ITPlanet/{{ inventory_hostname }}_info.txt"

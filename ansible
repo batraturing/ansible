@@ -27,7 +27,7 @@
 
         - name: Получение свободного места на диске
           set_fact:
-            free_disk_space: "{{ ansible_mounts | json_query('[?mount==`/`].size_available | [0]') | default('N/A') }}"
+            free_disk_space: "{{ ansible_mounts | selectattr('mount', '==', '/') | map(attribute='size_available') | first | default('N/A') }}"
 
         - name: Сохранение информации в файл
           copy:

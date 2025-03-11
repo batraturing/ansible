@@ -1,34 +1,37 @@
-- name: Gather system information from clients
-  hosts: clients
+- name: Сбор информации с клиентов
+  hosts: all
   become: yes
   tasks:
-    - name: Ensure the target directory exists
+
+    - name: Создание папки для сохранения информации
       file:
-        path: /etc/ansible/ITPlanet
+        path: /etc/ansible/IT-Planet
         state: directory
-        mode: '0755'
+      run_once: yes
+      delegate_to: localhost
 
-    - name: Get IP addresses
-      shell: ip addr show | grep 'inet ' | awk '{print $2}'
-      register: ip_addresses
+    - name: Получение IP-адреса клиента
+      shell: hostname -I | awk '{print $1}'
+      register: client_ip
 
-    - name: Get OS version
-      shell: cat /etc/os-release | grep PRETTY_NAME | cut -d '=' -f 2 | tr -d '"'
+    - name: Получение версии операционной системы
+      shell: cat /etc/os-release | grep PRETTY_NAME | cut -d '"' -f 2
       register: os_version
 
-    - name: Get hostname
+    - name: Получение имени клиента
       shell: hostname
-      register: hostname
+      register: client_name
 
-    - name: Get free disk space
-      shell: df -h | awk 'NR==2 {print $4}'
+    - name: Получение свободного места на диске
+      shell: df -h / | awk 'NR==2 {print $4}'
       register: free_disk_space
 
-    - name: Save gathered information to a file
+    - name: Сохранение информации в файл
       copy:
         content: |
-          Hostname: {{ hostname.stdout }}
-          IP Addresses: {{ ip_addresses.stdout_lines | join(', ') }}
-          OS Version: {{ os_version.stdout }}
-          Free Disk Space: {{ free_disk_space.stdout }}
-        dest: "/etc/ansible/ITPlanet/{{ inventory_hostname }}_info.txt"
+          IP адрес: {{ client_ip.stdout }}
+          Версия ОС: {{ os_version.stdout }}
+          Имя клиента: {{ client_name.stdout }}
+          Свободное место на диске: {{ free_disk_space.stdout }}
+        dest: /etc/ansible/IT-Planet/{{ inventory_hostname }}_info.txt
+      delegate_to: localhost

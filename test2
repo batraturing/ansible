@@ -1,3 +1,4 @@
+---
 - name: Сбор информации с клиентов
   hosts: all
   become: yes
@@ -11,8 +12,8 @@
       delegate_to: localhost
 
     - name: Получение IP-адреса клиента
-      shell: hostname -I | awk '{print $1}'
-      register: client_ip
+      set_fact:
+        client_ip: "{{ ansible_default_ipv4.address }}"
 
     - name: Получение версии операционной системы
       shell: cat /etc/os-release | grep PRETTY_NAME | cut -d '"' -f 2
@@ -29,7 +30,7 @@
     - name: Сохранение информации в файл
       copy:
         content: |
-          IP адрес: {{ client_ip.stdout }}
+          IP адрес: {{ client_ip }}
           Версия ОС: {{ os_version.stdout }}
           Имя клиента: {{ client_name.stdout }}
           Свободное место на диске: {{ free_disk_space.stdout }}
